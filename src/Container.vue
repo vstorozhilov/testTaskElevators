@@ -3,15 +3,21 @@
   import Button from './components/Button.vue';
   import Elevator from './components/Elevator.vue';
 
-  let liftCount = ref(1);
-  let floorsCount = ref(5);
-  let floors = ref(Array.from(Array(floorsCount.value).keys()).map(item=>(item + 1)).reverse());
-  let elevators = ref(Array.from(Array(liftCount.value).keys()).map((item, index)=>({
+  const liftCount = ref(1);
+  const floorsCount = ref(5);
+  const floors = ref(Array.from(Array(floorsCount.value).keys()).map(item=>(item + 1)).reverse());
+  const elevators = ref(Array.from(Array(liftCount.value).keys()).map((item, index)=>({
     floor : 1,
     isBusy : false,
     previousFloor : 1,
     index
   })));
+
+  const reff = ref(null);
+
+  //onMounted(setTimeout(()=>console.log(reff.value), 5000))
+
+  //const elevs = Array.from(Array(liftCount.value).keys()).map(item=>ref(null));
 
   function floorsCountChanging(e) {
     floorsCount.value = e.target.value;
@@ -51,7 +57,7 @@
         </div>
         </div>
       <div class="column" v-for="elevator in elevators" :key="elevator.index">
-        <Elevator :elevator="elevator"/>
+        <Elevator :elevator="elevator" ref="reff"/>
       </div>
       <div class="buttons" @buttonClicked="()=>{}">
         <Button  v-for="floor in floors" :key="floor" :number="floor"/>

@@ -1,16 +1,18 @@
 <script>
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, defineExpose} from 'vue';
 import {Keyframes} from 'vue-keyframes';
 
 export default {
   props: {
     elevator: Object,
-    id : Number
+    id : Number,
   },
   setup(props) {
     console.log(props.elevator);
     const elev = ref(null);
+    // defineExpose(elev);
     onMounted(async ()=>{
+      console.log(props.elevator)
       //let elevator = document.querySelector('#' + 'elevator' + (props.elevator.index).toString());
       await elev.value.animate([
         {transform : 'translateY(0)'},
