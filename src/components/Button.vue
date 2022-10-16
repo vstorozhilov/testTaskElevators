@@ -2,7 +2,15 @@
 export default {
   props: {
     number: Number
-  }
+  },
+  setup (props, context) {
+    const handleClick = () => {
+        context.emit("buttonClick", props.number)
+    }
+    return {
+        handleClick
+    }
+  },
 }
 </script>
 
@@ -11,18 +19,20 @@ export default {
     <div class="buttonLabel">
       {{number}}
     </div>
-    <div class="button">
+    <div class="button"
+      @mousedown="(e)=>{e.currentTarget.style.backgroundColor = 'aqua'}"
+      @mouseup="(e)=>{e.currentTarget.style.backgroundColor = 'transparent'}"
+      @click="handleClick">
       <input type="radio" checked>
     </div>
   </div>
 </template>
 
-<style scoped>
+<style>
 
 .buttonLabel {
   width: 30px;
   height: 30px;
-
 }
 .buttonContainer {
   display: flex;

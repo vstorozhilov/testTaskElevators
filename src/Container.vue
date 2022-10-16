@@ -1,11 +1,17 @@
 <script setup>
   import {ref, onMounted} from 'vue';
   import Button from './components/Button.vue';
+  import Elevator from './components/Elevator.vue';
 
   let liftCount = ref(1);
   let floorsCount = ref(5);
   let floors = ref(Array.from(Array(floorsCount.value).keys()).map(item=>(item + 1)).reverse());
-  let columns = ref(Array.from(Array(liftCount.value).keys()).map(item=>(item + 1)).reverse());
+  let elevators = ref(Array.from(Array(liftCount.value).keys()).map((item, index)=>({
+    floor : 1,
+    isBusy : false,
+    previousFloor : 1,
+    index
+  })));
 
   function floorsCountChanging(e) {
     floorsCount.value = e.target.value;
@@ -14,7 +20,12 @@
 
   function columnsCountChanging(e) {
     liftCount.value = e.target.value;
-    columns.value = Array.from(Array(parseInt(e.target.value)).keys()).map(item=>(item + 1)).reverse();
+    elevators.value = Array.from(Array(parseInt(e.target.value)).keys()).map((item, index)=>({
+      floor : 1,
+      isBusy : false,
+      previousFloor : 1,
+      index
+    }));
   }
 
 </script>
@@ -39,9 +50,10 @@
         <div class="floor" v-for="floor in floors" :key="floor">
         </div>
         </div>
-      <div class="column" v-for="column in columns" :key="column">
+      <div class="column" v-for="elevator in elevators" :key="elevator.index">
+        <Elevator :elevator="elevator"/>
       </div>
-      <div class="buttons">
+      <div class="buttons" @buttonClicked="()=>{}">
         <Button  v-for="floor in floors" :key="floor" :number="floor"/>
       </div>
     </div>
@@ -57,7 +69,7 @@
 .buttons {
   height: 100%;
   width: 50px;
-  border: solid black 2px;
+  /* border: solid black 2px; */
   display: flex;
   flex-direction: column;
   justify-content: flex-start;
@@ -79,6 +91,10 @@
 }
 
 .column {
+  display: flex;
+  position: relative;
+  flex-direction: column;
+  justify-content: flex-end;
   height: 100%;
   width: 110px;
   border-right: solid rgb(99, 92, 92) 3px;
@@ -110,7 +126,7 @@
   overflow-x: scroll;
   overflow-y: scroll;
   width: 1100px;
-  gap : 3px;
+  gap : 30px;
   position : relative;
   /* height : 700px; */
   border: solid rgb(99, 99, 99) 3px;
