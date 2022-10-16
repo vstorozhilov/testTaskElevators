@@ -5,7 +5,7 @@ export default {
   },
   setup (props, context) {
     const handleClick = () => {
-        context.emit("buttonClick", props.number)
+        context.emit("buttonClicked", props.number)
     }
     return {
         handleClick

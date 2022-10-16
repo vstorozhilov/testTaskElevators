@@ -6,12 +6,17 @@
   const liftCount = ref(1);
   const floorsCount = ref(5);
   const floors = ref(Array.from(Array(floorsCount.value).keys()).map(item=>(item + 1)).reverse());
-  const elevators = ref(Array.from(Array(liftCount.value).keys()).map((item, index)=>({
+  const elevators = ref(Array.from(Array(liftCount.value).keys()));
+
+  let eelevators = Array.from(Array(liftCount.value).keys()).map((item, index)=>({
     floor : 1,
-    isBusy : false,
     previousFloor : 1,
+    isBusy : false,
+    action : null,
     index
-  })));
+  }));
+
+  //const elevatorsPromises = Array.from(Array(liftCount.value).keys()).map(item=>null);
 
   const reff = ref(null);
 
@@ -26,12 +31,55 @@
 
   function columnsCountChanging(e) {
     liftCount.value = e.target.value;
-    elevators.value = Array.from(Array(parseInt(e.target.value)).keys()).map((item, index)=>({
-      floor : 1,
-      isBusy : false,
-      previousFloor : 1,
-      index
+    elevators.value = Array.from(Array(parseInt(e.target.value)).keys());
+    eelevators = Array.from(Array(liftCount.value).keys()).map((item, index)=>({
+    floor : 1,
+    previousFloor : 1,
+    isBusy : false,
+    action : null,
+    index
     }));
+  }
+
+  const elevatorMove = async (index, newFloor)=>{
+      eelevators[index].previousFloor = eelevators[index].floor;
+      eelevators[index].floor = newFloor;
+      eelevators[index].isBusy = true;
+      console.log(newFloor);
+      console.log((120 * (newFloor - eelevators[index].previousFloor)).toString() + 'px');
+      await reff.value[index].elev.animate([
+        {transform : 'translateY(0)'},
+        {transform : 'translateY(' + (-120 * (newFloor - eelevators[index].previousFloor)).toString() + 'px)'}
+      ], {duration: 1000 * Math.abs(newFloor - eelevators[index].previousFloor)}).finished;
+      reff.value[index].elev.style.bottom = (120 * (newFloor - 1)).toString() + 'px';
+      await reff.value[index].elev.animate([
+        {opacity : 1},
+        {opacity : 0},
+        {opacity : 1}
+      ], {duration: 1000,
+          iterations : 3}).finished;
+      eelevators[index].isBusy = false;
+      };
+
+  function buttonClicked(targetFloor) {
+    let freeElevators = eelevators.filter(item=>!item.isBusy);
+    console.log(freeElevators)
+    if (!freeElevators.length) {
+      /* TODO */
+    }
+    else {
+      let min = floorsCount.value;
+      let nearestElevator = null;
+      for (let elevator of freeElevators) {
+        if (Math.abs(elevator.floor - targetFloor) < min) {
+          min = Math.abs(elevator.floor - targetFloor);
+          nearestElevator = elevator;
+        }
+      }
+      console.log(nearestElevator);
+      nearestElevator.action = elevatorMove(nearestElevator.index, targetFloor);
+    }
+    //console.log(reff.value[0].elev)
   }
 
 </script>
@@ -57,10 +105,10 @@
         </div>
         </div>
       <div class="column" v-for="elevator in elevators" :key="elevator.index">
-        <Elevator :elevator="elevator" ref="reff"/>
+        <Elevator ref="reff"/>
       </div>
-      <div class="buttons" @buttonClicked="()=>{}">
-        <Button  v-for="floor in floors" :key="floor" :number="floor"/>
+      <div class="buttons">
+        <Button  v-for="floor in floors" :key="floor" :number="floor" @buttonClicked="buttonClicked"/>
       </div>
     </div>
   </main>
