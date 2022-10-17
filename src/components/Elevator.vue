@@ -2,6 +2,9 @@
 import { ref, onMounted} from 'vue';
 
 export default {
+  props : {
+    floor : Number
+  },
   setup(props) {
     const elev = ref(null);
     return { elev };
@@ -10,8 +13,11 @@ export default {
 </script>
 
 <template>
-    <div class="elevator" ref="elev">
-      <div class="display">1</div>
+    <div class="elevator" ref="elev"
+    :style="{
+      bottom : ((floor - 1) * 120).toString() + 'px'
+    }">
+      <div class="display">{{floor.toString()}}</div>
       <div class="display"></div>
     </div>
 </template>
@@ -27,7 +33,6 @@ export default {
   width: 100%;
   height: 120px;
   position: absolute;
-  bottom: 0px;
 }
 
 .display {

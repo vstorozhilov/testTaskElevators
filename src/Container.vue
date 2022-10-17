@@ -3,25 +3,46 @@
   import Button from './components/Button.vue';
   import Elevator from './components/Elevator.vue';
 
-  // number of elevators and floors for map size defenition
-  const liftCount = ref(1);
-  const floorsCount = ref(5);
+  let elevatorMap = JSON.parse(sessionStorage.getItem('elevatorMap'));
 
-  // keys of floors and elevators for "v-for" correct applying
-  const floors = ref(Array.from(Array(floorsCount.value).keys()).map(item=>(item + 1)));
-  const elevators = ref(Array.from(Array(liftCount.value).keys()));
-
-  // state for all elevators
-  let eelevators = Array.from(Array(liftCount.value).keys()).map((__, index)=>({
-    floor : 1,
-    previousFloor : 1,
-    isBusy : false,
-    action : null,
-    index
-  }));
-
-  let callQueuePromise = null;
+  let liftCount = null;
+  let floorsCount = null;
+  let floors = null;
+  let elevators = null;
+  let eelevators = null;
   let callQueue = [];
+  let callQueuePromise = null;
+
+  if (elevatorMap) {
+    liftCount = ref(elevatorMap.liftCount);
+    floorsCount = ref(elevatorMap.floorsCount);
+
+    // keys of floors and elevators for "v-for" correct applying
+    floors = ref(elevatorMap.floors);
+    elevators = ref(elevatorMap.elevators);
+
+    // state for all elevators
+    eelevators = elevatorMap.eelevators;
+  }
+  else {
+    // number of elevators and floors for map size defenition
+    liftCount = ref(1);
+    floorsCount = ref(5);
+
+    // keys of floors and elevators for "v-for" correct applying
+    floors = ref(Array.from(Array(floorsCount.value).keys()).map(item=>(item + 1)));
+    elevators = ref(Array.from(Array(liftCount.value).keys()));
+
+    // state for all elevators
+    eelevators = Array.from(Array(liftCount.value).keys()).map((__, index)=>({
+      floor : 1,
+      previousFloor : 1,
+      isBusy : false,
+      action : null,
+      index
+    }));
+  }
+
   // refs for refering to elevator's DOM nodes
   const reff = ref(null);
   const refff = ref(null);
@@ -35,7 +56,7 @@
     let newColumnValue = parseInt(e.target.value);
     liftCount.value = newColumnValue;
     elevators.value = Array.from(Array(newColumnValue).keys());
-
+    
     if (eelevators.length < newColumnValue) eelevators.push({
       floor : 1,
       previousFloor : 1,
@@ -45,17 +66,17 @@
     })
     else eelevators.pop();
   }
-
+  
   function numberOfFloor(count, display, delta) {
     display.textContent = (parseInt(display.textContent) + delta).toString();
     if (count) setTimeout(()=>numberOfFloor(count - 1, display, delta), 1000);
   }
-
+  
   const elevatorMove = async (index, newFloor)=>{
-
+    
       let previousFloor = eelevators[index].floor
       eelevators[index].isBusy = true;
-
+      
       let displays = reff.value[index].elev.querySelectorAll('.display');
       let delta = Math.sign(newFloor - previousFloor);
       let count = Math.abs(newFloor - previousFloor);
@@ -88,7 +109,7 @@
       let freeElevators = eelevators.filter(item=>!item.isBusy);
       // if all elevators are busy
       if (!freeElevators.length) {
-          callQueue.push(targetFloor)
+        callQueue.push(targetFloor)
           if (!callQueuePromise) {
             callQueuePromise =  Promise.any(eelevators.map(item=>item.action)).then(index=>{
               let newCall = elevatorMove(index, targetFloor);
@@ -97,11 +118,11 @@
           }
           else {
             callQueuePromise = callQueuePromise.then(()=>{
-                return Promise.any(eelevators.map(item=>item.action)).then(index=>{
-                  let newCall = elevatorMove(index, targetFloor);
-                  eelevators[index].action = newCall;
-                })
-              }
+              return Promise.any(eelevators.map(item=>item.action)).then(index=>{
+                let newCall = elevatorMove(index, targetFloor);
+                eelevators[index].action = newCall;
+              })
+            }
             )
           }
         }
@@ -122,12 +143,34 @@
       }
     }
   }
-
+  
   // prevents changes of map by keyboard input
   function keydownHandler(e) {
     if (e.code !== 'ArrowUp' && e.code !== 'ArrowDown') e.preventDefault();
   }
 
+  // resume animations from last positions
+  onMounted(()=>{
+    if (elevatorMap) {
+      for (let x of elevatorMap.callQueue) {
+        buttonClicked(x);
+      }
+    }
+  });
+
+  window.onbeforeunload = (event)=> {
+    eelevators.forEach(item=>{item.isBusy = false; item.action = null})
+    sessionStorage.setItem('elevatorMap', JSON.stringify({
+      liftCount : liftCount.value,
+      floorsCount : floorsCount.value,
+      elevators : elevators.value,
+      floors : floors.value,
+      eelevators,
+      callQueue
+    })
+    )
+  };
+  
 </script>
 
 <template>
@@ -150,8 +193,8 @@
         <div class="floor" v-for="floor in floors" :key="floor">
         </div>
         </div>
-      <div class="column" v-for="elevator in elevators" :key="elevator.index">
-        <Elevator ref="reff"/>
+      <div class="column" v-for="elevator in elevators" :key="elevator">
+        <Elevator ref="reff" :floor="eelevators[elevator].floor"/>
       </div>
       <div class="buttons">
         <Button ref="refff" v-for="floor in floors" :key="floor" :number="floor" @buttonClicked="buttonClicked"/>
@@ -169,7 +212,6 @@
 .buttons {
   height: 100%;
   width: 50px;
-  /* border: solid black 2px; */
   display: flex;
   flex-direction: column-reverse;
   justify-content: flex-start;
@@ -229,7 +271,6 @@
   width: 1100px;
   gap : 30px;
   position : relative;
-  /* height : 700px; */
   border: solid rgb(99, 99, 99) 3px;
   display: flex;
   flex-direction: row;
