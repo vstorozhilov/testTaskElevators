@@ -77,6 +77,7 @@
       let previousFloor = eelevators[index].floor
       eelevators[index].isBusy = true;
       
+      // draws floor's number and direction
       let displays = reff.value[index].elev.querySelectorAll('.display');
       let delta = Math.sign(newFloor - previousFloor);
       let count = Math.abs(newFloor - previousFloor);
@@ -84,6 +85,8 @@
       else displays[1].textContent = 'up';
       setTimeout(()=>numberOfFloor(count - 1, displays[0], delta), 1000);
       refff.value[newFloor - 1].button.style.backgroundColor = 'red';
+
+      // transition animation
       await reff.value[index].elev.animate([
         {transform : 'translateY(0)'},
         {transform : 'translateY(' + (-120 * (newFloor - previousFloor)).toString() + 'px)'}
@@ -92,12 +95,15 @@
       displays[1].textContent = '';
       eelevators[index].previousFloor = eelevators[index].floor;
       eelevators[index].floor = newFloor;
+
+      // flickering animation
       await reff.value[index].elev.animate([
         {opacity : 1},
         {opacity : 0},
         {opacity : 1}
       ], {duration: 1000,
           iterations : 3}).finished;
+
       eelevators[index].isBusy = false;
       refff.value[newFloor - 1].button.style.backgroundColor = 'white';
       callQueue.shift();
