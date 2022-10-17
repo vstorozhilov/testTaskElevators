@@ -112,10 +112,10 @@
   function buttonClicked(targetFloor) {
     if (!callQueue.includes(targetFloor)) {
       let freeElevators = eelevators.filter(item=>!item.isBusy);
-      refff.value[targetFloor - 1].button.style.backgroundColor = 'red';
       // if all elevators are busy
       if (!freeElevators.length) {
         callQueue.push(targetFloor)
+        refff.value[targetFloor - 1].button.style.backgroundColor = 'red';
           if (!callQueuePromise) {
             callQueuePromise =  Promise.any(eelevators.map(item=>item.action)).then(index=>{
               let newCall = elevatorMove(index, targetFloor);
@@ -144,6 +144,7 @@
         // if the nearest elevator isn't on the same floor
         if (min) {
           callQueue.push(targetFloor);
+          refff.value[targetFloor - 1].button.style.backgroundColor = 'red';
           nearestElevator.action = elevatorMove(nearestElevator.index, targetFloor);
         }
       }
