@@ -1,14 +1,16 @@
 <script>
+import { ref } from 'vue';
 export default {
   props: {
     number: Number
   },
   setup (props, context) {
+    const button = ref(null);
     const handleClick = () => {
         context.emit("buttonClicked", props.number)
     }
     return {
-        handleClick
+        handleClick, button
     }
   },
 }
@@ -19,9 +21,7 @@ export default {
     <div class="buttonLabel">
       {{number}}
     </div>
-    <div class="button"
-      @mousedown="(e)=>{e.currentTarget.style.backgroundColor = 'aqua'}"
-      @mouseup="(e)=>{e.currentTarget.style.backgroundColor = 'transparent'}"
+    <div class="button" ref="button"
       @click="handleClick">
       <input type="radio" checked>
     </div>

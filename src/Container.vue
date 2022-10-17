@@ -8,7 +8,7 @@
   const floorsCount = ref(5);
 
   // keys of floors and elevators for "v-for" correct applying
-  const floors = ref(Array.from(Array(floorsCount.value).keys()).map(item=>(item + 1)).reverse());
+  const floors = ref(Array.from(Array(floorsCount.value).keys()).map(item=>(item + 1)));
   const elevators = ref(Array.from(Array(liftCount.value).keys()));
 
   // state for all elevators
@@ -24,10 +24,11 @@
   let callQueue = [];
   // refs for refering to elevator's DOM nodes
   const reff = ref(null);
+  const refff = ref(null);
 
   function floorsCountChanging(e) {
-    floorsCount.value = e.target.value;
-    floors.value = Array.from(Array(parseInt(e.target.value)).keys()).map(item=>(item + 1)).reverse();
+    floorsCount.value = parseInt(e.target.value);
+    floors.value = Array.from(Array(parseInt(e.target.value)).keys()).map(item=>(item + 1));
   }
 
   function columnsCountChanging(e) {
@@ -45,17 +46,31 @@
     else eelevators.pop();
   }
 
+  function numberOfFloor(count, display, delta) {
+    display.textContent = (parseInt(display.textContent) + delta).toString();
+    if (count) setTimeout(()=>numberOfFloor(count - 1, display, delta), 1000);
+  }
+
   const elevatorMove = async (index, newFloor)=>{
 
-      eelevators[index].previousFloor = eelevators[index].floor;
-      eelevators[index].floor = newFloor;
+      let previousFloor = eelevators[index].floor
       eelevators[index].isBusy = true;
 
+      let displays = reff.value[index].elev.querySelectorAll('.display');
+      let delta = Math.sign(newFloor - previousFloor);
+      let count = Math.abs(newFloor - previousFloor);
+      if (delta < 0) displays[1].textContent = 'down';
+      else displays[1].textContent = 'up';
+      setTimeout(()=>numberOfFloor(count - 1, displays[0], delta), 1000);
+      refff.value[newFloor - 1].button.style.backgroundColor = 'red';
       await reff.value[index].elev.animate([
         {transform : 'translateY(0)'},
-        {transform : 'translateY(' + (-120 * (newFloor - eelevators[index].previousFloor)).toString() + 'px)'}
-      ], {duration: 1000 * Math.abs(newFloor - eelevators[index].previousFloor)}).finished;
+        {transform : 'translateY(' + (-120 * (newFloor - previousFloor)).toString() + 'px)'}
+      ], {duration: 1000 * Math.abs(newFloor - previousFloor)}).finished;
       reff.value[index].elev.style.bottom = (120 * (newFloor - 1)).toString() + 'px';
+      displays[1].textContent = '';
+      eelevators[index].previousFloor = eelevators[index].floor;
+      eelevators[index].floor = newFloor;
       await reff.value[index].elev.animate([
         {opacity : 1},
         {opacity : 0},
@@ -63,54 +78,47 @@
       ], {duration: 1000,
           iterations : 3}).finished;
       eelevators[index].isBusy = false;
+      refff.value[newFloor - 1].button.style.backgroundColor = 'white';
       callQueue.shift();
       return index;
       };
 
   function buttonClicked(targetFloor) {
-    let freeElevators = eelevators.filter(item=>!item.isBusy);
-
-    // if all elevators are busy
-    if (!freeElevators.length) {
-      if (!callQueue.includes(targetFloor)) {
-        callQueue.push(targetFloor)
-        if (!callQueuePromise) {
-          callQueuePromise =  Promise.any(eelevators.map(item=>item.action)).then(index=>{
-            let newCall = elevatorMove(index, targetFloor);
-            eelevators[index].action = newCall;
-          });
+    if (!callQueue.includes(targetFloor)) {
+      let freeElevators = eelevators.filter(item=>!item.isBusy);
+      // if all elevators are busy
+      if (!freeElevators.length) {
+          callQueue.push(targetFloor)
+          if (!callQueuePromise) {
+            callQueuePromise =  Promise.any(eelevators.map(item=>item.action)).then(index=>{
+              let newCall = elevatorMove(index, targetFloor);
+              eelevators[index].action = newCall;
+            });
+          }
+          else {
+            callQueuePromise = callQueuePromise.then(()=>{
+                return Promise.any(eelevators.map(item=>item.action)).then(index=>{
+                  let newCall = elevatorMove(index, targetFloor);
+                  eelevators[index].action = newCall;
+                })
+              }
+            )
+          }
         }
-        else {
-          callQueuePromise = callQueuePromise.then(()=>{
-              return Promise.any(eelevators.map(item=>item.action)).then(index=>{
-                let newCall = elevatorMove(index, targetFloor);
-                eelevators[index].action = newCall;
-              })
-            }
-          )
+      else {
+        let min = floorsCount.value;
+        let nearestElevator = null;
+        for (let elevator of freeElevators) {
+          if (Math.abs(elevator.floor - targetFloor) < min) {
+            min = Math.abs(elevator.floor - targetFloor);
+            nearestElevator = elevator;
+          }
         }
-      }
-      // let fastestIndex;
-      // let newcall = Promise.any(eelevators.map(item=>item.action)).then(index=>{
-      //   fastestIndex = index;
-      //   // let newcall = elevatorMove(index, targetFloor);
-      //   // eelevators[index].action = newcall;
-      //   return elevatorMove(index, targetFloor);
-      // });
-      // eelevators[fastestIndex].action = newcall;
-    }
-    else {
-      let min = floorsCount.value;
-      let nearestElevator = null;
-      for (let elevator of freeElevators) {
-        if (Math.abs(elevator.floor - targetFloor) < min) {
-          min = Math.abs(elevator.floor - targetFloor);
-          nearestElevator = elevator;
+        // if the nearest elevator isn't on the same floor
+        if (min) {
+          callQueue.push(targetFloor);
+          nearestElevator.action = elevatorMove(nearestElevator.index, targetFloor);
         }
-      }
-      // if the nearest elevator isn't on the same floor
-      if (min) {
-        nearestElevator.action = elevatorMove(nearestElevator.index, targetFloor);
       }
     }
   }
@@ -146,7 +154,7 @@
         <Elevator ref="reff"/>
       </div>
       <div class="buttons">
-        <Button  v-for="floor in floors" :key="floor" :number="floor" @buttonClicked="buttonClicked"/>
+        <Button ref="refff" v-for="floor in floors" :key="floor" :number="floor" @buttonClicked="buttonClicked"/>
       </div>
     </div>
   </main>
@@ -163,7 +171,7 @@
   width: 50px;
   /* border: solid black 2px; */
   display: flex;
-  flex-direction: column;
+  flex-direction: column-reverse;
   justify-content: flex-start;
 }
 
