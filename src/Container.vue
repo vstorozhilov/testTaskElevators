@@ -84,7 +84,6 @@
       if (delta < 0) displays[1].textContent = 'down';
       else displays[1].textContent = 'up';
       setTimeout(()=>numberOfFloor(count - 1, displays[0], delta), 1000);
-      refff.value[newFloor - 1].button.style.backgroundColor = 'red';
 
       // transition animation
       await reff.value[index].elev.animate([
@@ -113,6 +112,7 @@
   function buttonClicked(targetFloor) {
     if (!callQueue.includes(targetFloor)) {
       let freeElevators = eelevators.filter(item=>!item.isBusy);
+      refff.value[targetFloor - 1].button.style.backgroundColor = 'red';
       // if all elevators are busy
       if (!freeElevators.length) {
         callQueue.push(targetFloor)
@@ -184,11 +184,11 @@
     <span>
     Select number of lifts
     </span>
-    <input @keydown="keydownHandler" @change="columnsCountChanging" class="inputNumber" type="number" value="1" min="1"/>
+    <input @keydown="keydownHandler" @change="columnsCountChanging" class="inputNumber" type="number" :value="liftCount" min="1"/>
     <span>
     Select number of floors
     </span>
-    <input @keydown="keydownHandler" @change="floorsCountChanging" class="inputNumber" type="number" value="5" min="2"/>
+    <input @keydown="keydownHandler" @change="floorsCountChanging" class="inputNumber" type="number" :value="floorsCount" min="2"/>
   </header>
   <main id="main">
     <div id="building" :style="{
